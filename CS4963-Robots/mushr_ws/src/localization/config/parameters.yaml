@@ -1,0 +1,15 @@
+# Parameters for your particle filter
+
+motion_params:
+  vel_std:    0.03
+  delta_std:  0.1
+  x_std:      0.02
+  y_std:      0.01
+  theta_std:  0.02
+
+sensor_params:
+ hit_std:    0.7
+ z_hit:      0.6
+ z_short:    0.02
+ z_max:      0.01
+ z_rand:     0.1

@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="plotjuggler" type="plotjuggler" name="plot_juggler" args="-l $(find control)/config/control_juggler.xml" />
+    <node pkg="control" type="path_sender" name="$(anon path_sender)" args="line --length 10" />
+</launch>

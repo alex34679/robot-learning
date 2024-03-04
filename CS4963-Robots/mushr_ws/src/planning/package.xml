@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>planning</name>
+  <version>1.0.0</version>
+  <description>CSE 478 MuSHR Planning Project</description>
+
+  <author>Brian Hou</author>
+  <author>Gilwoo Lee</author>
+  <author>Mohit Shridhar</author>
+  <author>Nick Walker</author>
+
+  <maintainer email="mushr@cs.washington.edu">UW CSE Robotics Teaching Staff</maintainer>
+
+  <url>https://courses.cs.washington.edu/courses/cse478/</url>
+  <url>https://mushr.io/</url>
+
+  <license>Educational Use Only</license>
+
+  <test_depend>roslaunch</test_depend>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>cse478</exec_depend>
+  <exec_depend>localization</exec_depend>
+  <exec_depend>control</exec_depend>
+
+  <exec_depend condition="$ROS_PYTHON_VERSION == 2">ipython</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">ipython3</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-matplotlib</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-matplotlib</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-networkx</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-networkx</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-numpy</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-numpy</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+
+  <export>
+
+  </export>
+</package>

@@ -1,0 +1,10 @@
+{
+    "python.analysis.extraPaths": [
+        "./mushr_ws/src/introduction/src"
+    ],
+    "cmake.sourceDirectory": "/Users/rylanmetcalfe/Documents/Github.nosync/CS4963-Robots/catkin_ws/src/mushr_gprm",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "python.formatting.provider": "none"
+}

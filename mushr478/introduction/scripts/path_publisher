@@ -1,0 +1,79 @@
+#!/usr/bin/env python
+
+import rospy
+
+from ackermann_msgs.msg import AckermannDriveStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
+
+from cse478 import utils
+
+
+class PathPublisher:
+    def __init__(self, control_duration=1.0, control_rate=10):
+        """Create a PathPublisher.
+
+        Args:
+          control_duration: How long to send each command (in seconds)
+          control_rate: How frequently to send each command (in Hz)
+        """
+        self._setup_publishers()
+        self.control_duration = rospy.Duration(control_duration)
+        self.control_rate = rospy.Rate(control_rate)
+
+        # Parse and validate the plan file. The first line of the plan file is
+        # the initial pose [x, y, theta]. All subsequent elements are Ackermann
+        # commands [speed, steering_angle].
+        plan_file = rospy.get_param("~plan_file")
+        with open(plan_file) as f:
+            plan = [list(map(float, line.split(","))) for line in f]
+        self.init_pose = plan[0]
+        self.commands = plan[1:]
+        assert len(self.init_pose) == 3, len(self.init_pose)
+        for cmd in self.commands:
+            assert len(cmd) == 2, len(cmd)
+
+    def follow_plan(self):
+        """Follow the parsed plan."""
+        self.init_pose_publisher.publish(self.make_pose_msg(self.init_pose))
+        for cmd in self.commands:
+            cmd_msg = self.make_command_msg(cmd)
+            end_time = rospy.Time.now() + self.control_duration
+            while rospy.Time.now() < end_time:
+                self.control_publisher.publish(cmd_msg)
+                self.control_rate.sleep()
+
+    def make_pose_msg(self, pose_data):
+        """Create a PoseWithCovarianceStamped message from an initial pose."""
+        msg = PoseWithCovarianceStamped()
+        msg.header = utils.make_header(frame_id="map")
+        msg.pose.pose = utils.particle_to_pose(list(map(float, pose_data)))
+        return msg
+
+    def make_command_msg(self, cmd):
+        """Create an AckermannDriveStamped message from a command."""
+        v, delta = cmd
+        msg = AckermannDriveStamped()
+        msg.drive.steering_angle = delta
+        msg.drive.speed = v
+        return msg
+
+    def _setup_publishers(self):
+        """Set up publishers: one for the initial pose, one for each command."""
+
+        self.init_pose_publisher = rospy.Publisher(
+            "initialpose", PoseWithCovarianceStamped, queue_size=1
+        )
+
+        self.control_publisher = rospy.Publisher(
+            "control", AckermannDriveStamped, queue_size=1
+        )
+
+        # Publishers sometimes need time to warm up. You can also wait until there
+        # are subscribers to start publishing. (See publisher documentation.)
+        rospy.sleep(1.0)
+
+
+if __name__ == "__main__":
+    rospy.init_node("path_publisher")
+    path_publisher = PathPublisher()
+    path_publisher.follow_plan()

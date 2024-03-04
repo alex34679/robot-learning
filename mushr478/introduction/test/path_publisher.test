@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="introduction" type="path_publisher" name="path_publisher">
+    <param name="plan_file" value="$(find introduction)/plans/straight_line.txt" />
+  </node>
+  <test test-name="test_publisher" pkg="introduction" type="path_publisher.py"/>
+</launch>

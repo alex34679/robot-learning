@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+
+"""Script for running A* on R2 and SE2 problems without ROS."""
+
+from __future__ import print_function
+
+import argparse
+import networkx as nx
+import numpy as np
+import time
+
+from planning import search
+from planning.problems import R2Problem, SE2Problem
+from planning.roadmap import Roadmap
+from planning.samplers import samplers
+
+
+def main(args):
+    assert len(args.start) == len(args.goal)
+    start = np.array(args.start)
+    goal = np.array(args.goal)
+    if args.problem == "se2":
+        start[2] = np.radians(start[2])
+        goal[2] = np.radians(goal[2])
+
+    permissible_region = np.loadtxt(args.text_map, dtype=bool)
+    if args.problem == "r2":
+        problem = R2Problem(permissible_region)
+    if args.problem == "se2":
+        problem = SE2Problem(permissible_region, curvature=args.curvature)
+    sampler = samplers[args.sampler](problem.extents)
+    start_time = time.time()
+    rm = Roadmap(problem, sampler, args.num_vertices, args.connection_radius, args.lazy)
+    start_id = rm.add_node(start, is_start=True)
+    goal_id = rm.add_node(goal, is_start=False)
+
+    try:
+        print("Running A*")
+        vpath, _ = search.astar(rm, start_id, goal_id)
+        end_time = time.time()
+        print("Path length:", rm.compute_path_length(vpath))
+        print("Planning time:", end_time - start_time)
+        print("Edges evaluated:", rm.edges_evaluated)
+    except nx.NetworkXNoPath as e:
+        print(e)
+        return
+
+    rm.visualize(show_edges=args.show_edges, vpath=vpath)
+
+    if args.shortcut:
+        print("Shortcutting A* path")
+        start_time = time.time()
+        vpath = search.shortcut(rm, vpath)
+        end_time = time.time()
+        print("Shortcut length:", rm.compute_path_length(vpath))
+        print("Shortcut time:", end_time - start_time)
+        rm.visualize(show_edges=args.show_edges, vpath=vpath)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="test (lazy) A* on R2 and SE2 problems"
+    )
+    parser.add_argument("-m", "--text-map", type=str, help="the environment to plan on")
+    parser.add_argument("-n", "--num-vertices", type=int, required=True)
+    parser.add_argument("-r", "--connection-radius", type=float, default=1.0)
+    parser.add_argument("--sampler", type=str, default="halton", choices=samplers)
+    parser.add_argument("--lazy", action="store_true")
+    parser.add_argument("--shortcut", action="store_true")
+    parser.add_argument("--show-edges", action="store_true")
+
+    subparsers = parser.add_subparsers(dest="problem")
+    r2_parser = subparsers.add_parser("r2", help="R2 options")
+    r2_parser.add_argument("-s", "--start", nargs=2, type=int, required=True)
+    r2_parser.add_argument("-g", "--goal", nargs=2, type=int, required=True)
+    se2_parser = subparsers.add_parser("se2", help="SE2 options")
+    se2_parser.add_argument("-s", "--start", nargs=3, type=int, required=True)
+    se2_parser.add_argument("-g", "--goal", nargs=3, type=int, required=True)
+    se2_parser.add_argument("-c", "--curvature", type=float, default=1.0)
+    args = parser.parse_args()
+
+    main(args)

@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+from __future__ import division
+from __future__ import print_function
+
+import matplotlib.pyplot as plt
+import numpy as np
+import yaml
+import os
+
+from localization.motion_model import KinematicCarMotionModel
+
+
+def plot_motion_model(motion_model, control, noiseless_state=None, radius=0.1):
+    """Visualize the motion model.
+
+    The initial state is visualized with a green arrow. The resulting particles
+    after sampling from the motion model are visualized with blue arrows. If the
+    ground-truth state is provided, it is visualized with a red arrow.
+
+    Args:
+        motion_model: Motion model being visualized
+        control: Control to apply (velocity, steering angle, control duration)
+        noiseless_state: Noiseless kinematic car model prediction (optional)
+        radius: Distance to count particles around the noiseless state
+    """
+    # Sample from the motion model, starting from the zero state
+    num_particles = 100
+    particles = np.zeros((num_particles, 3))
+    v, delta, dt = control
+    motion_model.apply_motion_model(particles, v, delta, dt)
+
+    # Set up the plot
+    plt.figure()
+    plt.xlabel("x (m)")
+    plt.ylabel("y (m)")
+    plt.ylim(bottom=-0.1)
+    plt.xlim(left=-0.1)
+    plt.ylim(top=1.5)
+    plt.xlim(right=1.5)
+    delta = 0
+    arrow_thickness = 0.03
+    dx = arrow_thickness * np.cos(delta)
+    dy = arrow_thickness * np.sin(delta)
+    plt.quiver(0, 0, dx, dy, color="g")
+    plt.quiver(
+        particles[:, 0],
+        particles[:, 1],
+        arrow_thickness * np.cos(particles[:, 2]),
+        arrow_thickness * np.sin(particles[:, 2]),
+        color="b",
+    )
+
+    if noiseless_state:
+        gt_x, gt_y, gt_theta = noiseless_state
+        plt.quiver(
+            gt_x,
+            gt_y,
+            arrow_thickness * np.cos(gt_theta),
+            arrow_thickness * np.sin(gt_theta),
+            color="r",
+        )
+
+        distances = np.linalg.norm(particles[:, :2] - noiseless_state[:2], axis=1)
+        within_radius = (distances < radius).sum()
+
+        caption = "(v, delta, dt) = {}\n{}/{} particles within {}cm of the mean".format(
+            control, within_radius, num_particles, int(radius * 100)
+        )
+        plt.figtext(
+            0.5, 0.9, caption, wrap=True, horizontalalignment="center", fontsize=12
+        )
+    plt.gca().set_aspect(aspect=1.0)
+
+
+if __name__ == "__main__":
+    path_to_current = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(path_to_current, "../config/parameters.yaml"), "r") as f:
+        params = yaml.full_load(f)
+        motion_params = params.get("motion_params")
+        print("Loaded parameters:", motion_params)
+
+    motion_model = KinematicCarMotionModel(0.33, **motion_params)
+
+    # control (v, delta, dt) -> next state (without noise)
+    example_cases = {
+        (1.0, 0.34, 0.1): [0.09937757, 0.0033936, 0.10634897],
+        (3.0, 0.40, 0.5): [0.76003705, 0.99738116, 1.86917909],
+    }
+
+    for control, noiseless_state in example_cases.items():
+        plot_motion_model(motion_model, control, noiseless_state)
+    plt.show()

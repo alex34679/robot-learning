@@ -1,0 +1,12 @@
+<launch>
+    <arg name="plan_file" default="$(find introduction)/plans/straight_line.txt" />
+    <arg name="buffer_size" default="500" />
+
+    <node pkg="introduction" type="path_publisher" name="path_publisher" output="screen">
+        <param name="plan_file" value="$(arg plan_file)" />
+        <remap from="control" to="/car/mux/ackermann_cmd_mux/input/navigation" />
+    </node>
+    <node pkg="introduction" type="pose_listener" name="pose_listener" output="screen">
+        <param name="buffer_size" value="$(arg buffer_size)" />
+    </node>
+</launch>

@@ -1,0 +1,37 @@
+{
+  "name": "noetic desktop",
+  "dockerFile": "Dockerfile.noconda",
+  "build": {
+    "args": {
+      "platform": "linux/amd64"
+    }
+  },
+  "remoteUser": "vscode",
+  "runArgs": [
+    "--privileged",
+    "--platform=linux/amd64",
+    "--env=\"DISPLAY=host.docker.internal:0\""
+  ],
+  "workspaceMount": "source=${localWorkspaceFolder},target=/${localWorkspaceFolderBasename},type=bind",
+  "workspaceFolder": "/${localWorkspaceFolderBasename}",
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.bash_history,target=/home/vscode/.bash_history,type=bind",
+    "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached"
+  ],
+  "features": {},
+  "forwardPorts": [
+    "9090:9090"
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "remote.autoForwardPorts": false
+      },
+      "extensions": [
+        "ms-python.python",
+        "eamodio.gitlens",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

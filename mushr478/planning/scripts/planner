@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+
+import rospy
+from planning.planner_ros import PlannerROS
+
+if __name__ == "__main__":
+    rospy.init_node("planner")
+
+    PlannerROS(
+        num_vertices=rospy.get_param("~num_vertices"),
+        connection_radius=float(rospy.get_param("~connection_radius")),
+        curvature=float(rospy.get_param("~curvature")),
+        tf_prefix=rospy.get_param("~tf_prefix", ""),
+        cache_roadmap=bool(rospy.get_param("~cache_roadmap")),
+    )
+    rospy.spin()

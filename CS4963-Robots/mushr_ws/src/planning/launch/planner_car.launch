@@ -1,0 +1,25 @@
+<launch>
+    <arg name="car_name" default="car"/>
+    <arg name="initial_x" default="0"/>
+    <arg name="initial_y" default="0"/>
+    <arg name="initial_theta" default="0"/>
+
+    <arg name="num_vertices" default="200"/>
+    <arg name="connection_radius" default="10.0"/>
+    <arg name="curvature" default="1.0"/>
+    <arg name="cache_roadmap" default="false"/>
+    <arg name="tf_prefix" default="car/"/>
+
+    <group ns="$(arg car_name)">
+
+        <node pkg="planning" type="planner" name="planner" output="screen">
+            <param name="num_vertices" value="$(arg num_vertices)"/>
+            <param name="connection_radius" value="$(arg connection_radius)"/>
+            <param name="curvature" value="$(arg curvature)"/>
+	    <param name="tf_prefix" value="$(arg tf_prefix)"/>
+            <param name="cache_roadmap" value="$(arg cache_roadmap)"/>
+        </node>
+    </group>
+
+
+</launch>

@@ -1,0 +1,49 @@
+<launch>
+    <arg name="car_name" default="car"/>
+    <arg name="map" default="$(find cse478)/maps/maze_0.yaml"/>
+    <arg name="initial_x" default="0"/>
+    <arg name="initial_y" default="0"/>
+    <arg name="initial_theta" default="0"/>
+    <arg name="fake_localization" default="false" />
+    <arg name="controller" default="mpc"/>
+    <arg name="teleop" default="true"/>
+    <arg name="rviz" default="true" />
+    <arg name="tf_prefix" default="" />
+
+    <arg name="num_vertices" default="200"/>
+    <arg name="connection_radius" default="10.0"/>
+    <arg name="curvature" default="1.0"/>
+    <arg name="cache_roadmap" default="false"/>
+
+    <include file="$(find cse478)/launch/teleop.launch">
+        <arg name="fake_localization" value="$(arg fake_localization)" />
+        <arg name="map" value="$(arg map)"/>
+        <arg name="initial_x" value="$(arg initial_x)"/>
+        <arg name="initial_y" value="$(arg initial_y)"/>
+        <arg name="initial_theta" value="$(arg initial_theta)"/>
+        <arg name="teleop" value="$(arg teleop)" />
+    </include>
+
+    <group ns="$(arg car_name)">
+        <include file="$(find localization)/launch/include/particle_filter.xml">
+            <arg name="publish_tf" value="$(eval not fake_localization)" />
+            <arg name="initial_x" value="$(arg initial_x)"/>
+            <arg name="initial_y" value="$(arg initial_y)"/>
+            <arg name="initial_theta" value="$(arg initial_theta)"/>
+            <arg name="tf_prefix" value="$(arg tf_prefix)"/>
+        </include>
+
+        <node pkg="planning" type="planner" name="planner" output="screen">
+            <param name="num_vertices" value="$(arg num_vertices)"/>
+            <param name="connection_radius" value="$(arg connection_radius)"/>
+            <param name="curvature" value="$(arg curvature)"/>
+            <param name="cache_roadmap" value="$(arg cache_roadmap)"/>
+        </node>
+    </group>
+
+    <include file="$(find control)/launch/controller.launch">
+        <arg name="type" default="$(arg controller)"/>
+    </include>
+
+    <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz" args="-d $(find planning)/config/planning.rviz"/>
+</launch>

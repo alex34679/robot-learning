@@ -1,0 +1,13 @@
+<launch>
+    <arg name="type" default=""/>
+    <arg name="tf_prefix" default="" />
+    <group ns="car">
+    <node pkg="control" type="control_node" name="controller" output="screen">
+        <param name="type" value="$(arg type)" />
+        <param name="tf_prefix" value="$(arg tf_prefix)"/>
+        <rosparam command="load" file="$(find control)/config/parameters.yaml" />
+        <!-- Grab motion model params -->
+        <rosparam command="load" file="$(find localization)/config/parameters.yaml" />
+    </node>
+    </group>
+</launch>

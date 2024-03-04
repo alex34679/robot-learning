@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>localization</name>
+  <version>1.0.0</version>
+  <description>CSE 478 MuSHR Localization Project</description>
+
+  <author>Brian Hou</author>
+  <author>Kay Ke</author>
+  <author>Matt Schmittle</author>
+  <author>Nick Walker</author>
+
+  <maintainer email="mushr@cs.washington.edu">UW CSE Robotics Teaching Staff</maintainer>
+
+  <url>https://courses.cs.washington.edu/courses/cse478/</url>
+  <url>https://mushr.io/</url>
+
+  <license>Educational Use Only</license>
+
+  <test_depend>roslaunch</test_depend>
+  <test_depend>rostest</test_depend>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <exec_depend>cse478</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>mushr_sim</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-matplotlib</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-matplotlib</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-numpy</exec_depend>
+  <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-numpy</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>rosbag</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>vesc_msgs</exec_depend>
+
+  <export>
+
+  </export>
+</package>

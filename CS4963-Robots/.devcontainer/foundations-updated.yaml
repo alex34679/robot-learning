@@ -1,0 +1,24 @@
+name: foundationsupdated
+channels:
+- conda-forge
+- robostack-staging
+dependencies:
+- python=3.9
+- numpy
+- ros-noetic-desktop
+- compilers
+- cmake
+- pkg-config
+- make
+- ninja
+- catkin_tools
+- ros-noetic-realsense2-description
+- curl
+- cython
+- ros-noetic-map-server
+- ros-noetic-rosbridge-server
+- pip
+- git
+- ros-noetic-ackermann-msgs
+- ros-noetic-fake-localization
+- ros-noetic-joy

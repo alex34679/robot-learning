@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+"""Publish the nth Fibonacci number."""
+
+import rospy  # ROS Python API
+from std_msgs.msg import Int64, String  # ROS message type
+
+
+from introduction.fibonacci import compute_fibonacci
+
+# This if-statement is a common Python idiom. If we run this script directly
+# (e.g. with python3 ./fibonacci), this will be the code entrypoint. If this
+# file were imported by another script, however, the condition would evaluate to
+# False and code inside won't run.
+if __name__ == "__main__":
+    # You can uncomment the following lines after completing compute_fibonacci.
+    # fibonacci_numbers = [compute_fibonacci(i) for i in range(11)]
+    # print(fibonacci_numbers)
+
+    # Every node registers itself with the ROS master process, so we must pass a
+    # name for the node. (A good practice is to use the same name as the script,
+    # but it's up to you.)
+    rospy.init_node("fibonacci")
+
+    # Here's an example to get parameters from ROS. Note that the name starts
+    # with ~. Just name your parameters following this convention for now.
+    #
+    # Function signature: rospy.get_param(parameter_name, default_value)
+    fib_topic = rospy.get_param("~output_topic", "/introduction/fib_output")
+
+    # Get the value of the "~fibonacci_index" parameter from ROS. Don't forget
+    # to make sure it's the right type (an integer)! Feel free to specify a
+    # default value.
+    # BEGIN QUESTION 1.2
+    "*** REPLACE THIS LINE ***"
+    # END QUESTION 1.2
+
+    # Here's an example to create a ROS publisher. The queue_size defines how
+    # many messages to buffer when waiting to send messages. In general, a large
+    # number will be useful when many messages will be sent. We are sending
+    # messages infrequently, 1 is okay.
+    #
+    # Function signature: rospy.Publisher(topic_name, msg_type, queue_size)
+    example_publisher = rospy.Publisher("/introduction/example", String, queue_size=1)
+
+    # Using the above example as a guide, create a publisher to the topic name
+    # you obtained earlier. The example publisher publishes String messages;
+    # what type of messages do we want to publish from our Fibonacci publisher?
+    # (Hint: check the imports at the top of the file.)
+    # BEGIN QUESTION 1.2
+    "*** REPLACE THIS LINE ***"
+    # END QUESTION 1.2
+
+    # It can take some time for the publisher to be ready, so we'll wait before
+    # we start to publish. (The specific wait time isn't important, but for
+    # completeness, this waits for 0.5 seconds.)
+    rospy.sleep(0.5)
+
+    example_publisher.publish("Hello World!")
+
+    # Call compute_fibonacci with the index you obtained earlier, then publish
+    # the resulting Fibonacci number.
+    # BEGIN QUESTION 1.2
+    "*** REPLACE THIS LINE ***"
+    # END QUESTION 1.2

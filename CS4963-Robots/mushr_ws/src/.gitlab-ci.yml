@@ -1,0 +1,15 @@
+
+
+cache:
+  key: "${CI_JOB_NAME}" # https://docs.gitlab.com/ee/ci/caching/#sharing-caches-across-different-branches
+  paths:
+    - ccache
+
+lint:
+  tags: [python-ci]
+  image: python:3.8-buster
+  allow_failure: true
+  script:
+    - pip3 -q install flake8 pep8-naming typing
+    - python3 -m flake8
+

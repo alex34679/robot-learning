@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find introduction)/launch/fibonacci.launch">
+    <arg name="index" value="123" />
+    <arg name="fibonacci_output_topic" value="test_unique_value" />
+  </include>
+  <test test-name="test_fibonacci_launch" pkg="introduction" type="fibonacci_launch.py"/>
+</launch>

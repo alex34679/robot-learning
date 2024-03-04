@@ -1,0 +1,29 @@
+<launch>
+    <arg name="car_name" default="car"/>
+    <arg name="map" default="$(find cse478)/maps/maze_0.yaml"/>
+    <arg name="initial_x" default="0"/>
+    <arg name="initial_y" default="0"/>
+    <arg name="initial_theta" default="0"/>
+    <arg name="fake_localization" default="false" />
+    <arg name="teleop" default="false"/>
+
+    <arg name="sampler" default="halton"/>
+    <arg name="problem" default="se2"/>
+    <arg name="num_vertices" default="200"/>
+    <arg name="connection_radius" default="10.0"/>
+    <arg name="curvature" default="1.0"/>
+
+    <include file="$(find cse478)/launch/teleop.launch">
+        <arg name="fake_localization" value="$(arg fake_localization)" />
+        <arg name="map" value="$(arg map)"/>
+        <arg name="initial_x" value="$(arg initial_x)"/>
+        <arg name="initial_y" value="$(arg initial_y)"/>
+        <arg name="initial_theta" value="$(arg initial_theta)"/>
+        <arg name="teleop" value="$(arg teleop)" />
+    </include>
+
+    <group ns="$(arg car_name)">
+        <node pkg="planning" type="roadmap" name="roadmap"
+            args="--use-ros-map --lazy --sampler $(arg sampler) --problem $(arg problem) --num-vertices $(arg num_vertices) --connection-radius $(arg connection_radius) --curvature $(arg curvature)" output="screen"/>
+    </group>
+</launch>

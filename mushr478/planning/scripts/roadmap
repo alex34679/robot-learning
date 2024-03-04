@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+"""Script for generating and visualizing roadmaps."""
+
+import argparse
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import rospy
+
+from cse478 import utils
+
+from planning.planner_ros import graph_location
+from planning.problems import R2Problem, SE2Problem
+from planning.roadmap import Roadmap
+from planning.samplers import samplers
+
+
+def main(args):
+    map_info = None
+    saveto = None
+    if args.use_ros_map:
+        permissible_region, map_info = utils.get_map("/static_map")
+        saveto = graph_location(
+            args.problem,
+            args.sampler,
+            args.num_vertices,
+            args.connection_radius,
+            args.curvature,
+        )
+    elif args.text_map:
+        permissible_region = np.loadtxt(args.text_map, dtype=bool)
+    else:
+        permissible_region = np.ones((10, 10), dtype=bool)
+
+    if args.problem == "r2":
+        problem = R2Problem(permissible_region, map_info=map_info)
+    else:
+        problem = SE2Problem(
+            permissible_region, map_info=map_info, curvature=args.curvature
+        )
+    sampler = samplers[args.sampler](problem.extents)
+    rm = Roadmap(
+        problem,
+        sampler,
+        args.num_vertices,
+        connection_radius=args.connection_radius,
+        lazy=args.lazy,
+        saveto=saveto,
+    )
+    rm.visualize(show_edges=args.show_edges)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="generate and visualize roadmaps")
+    parser.add_argument("-n", "--num-vertices", type=int, default=100)
+    parser.add_argument("-r", "--connection-radius", type=float, default=2.0)
+    parser.add_argument("-c", "--curvature", type=float, default=1.0)
+    parser.add_argument("--sampler", choices=samplers, default="halton")
+    parser.add_argument("--lazy", action="store_true")
+    parser.add_argument("--show-edges", action="store_true")
+    parser.add_argument("--problem", choices=("r2", "se2"), default="r2")
+    map_group = parser.add_mutually_exclusive_group()
+    map_group.add_argument("--use-ros-map", action="store_true")
+    map_group.add_argument("-m", "--text-map")
+    args = parser.parse_args(rospy.myargv()[1:])
+
+    main(args)

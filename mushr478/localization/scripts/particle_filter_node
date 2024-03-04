@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+import numpy as np
+import rospy
+from localization.particle_filter import ParticleFilter
+
+if __name__ == "__main__":
+    rospy.init_node("particle_filter")
+
+    params = {
+        "publish_tf": bool(rospy.get_param("~publish_tf")),
+        "tf_prefix": str(rospy.get_param("~tf_prefix")),
+        "n_particles": int(rospy.get_param("~n_particles")),
+        "n_viz_particles": int(rospy.get_param("~n_viz_particles")),
+        "car_length": float(rospy.get_param("~kinematics/car_length", 0.33)),
+        "laser_ray_step": int(rospy.get_param("~laser_ray_step")),
+        "exclude_max_range_rays": bool(rospy.get_param("~exclude_max_range_rays")),
+        "max_range_meters": float(rospy.get_param("~max_range_meters")),
+        "speed_to_erpm_offset": float(
+            rospy.get_param("vesc/speed_to_erpm_offset", 0.0)
+        ),
+        "speed_to_erpm_gain": float(rospy.get_param("vesc/speed_to_erpm_gain", 4350)),
+        "steering_to_servo_offset": float(
+            rospy.get_param("vesc/steering_angle_to_servo_offset", 0.5)
+        ),
+        "steering_to_servo_gain": float(
+            rospy.get_param("vesc/steering_angle_to_servo_gain", -1.2135)
+        ),
+        "use_map_topic": bool(rospy.get_param("~use_map_topic", False)),
+    }
+    sensor_params = rospy.get_param("~sensor_params")
+    motion_params = rospy.get_param("~motion_params")
+
+    # Create the particle filter
+    pf = ParticleFilter(
+        motion_params=motion_params, sensor_params=sensor_params, **params
+    )
+
+    initialization = [
+        float(rospy.get_param("~initial_x", "NaN")),
+        float(rospy.get_param("~initial_y", "NaN")),
+        float(rospy.get_param("~initial_theta", "NaN")),
+    ]
+    if not any(map(np.isnan, initialization)):
+        pf.set_pose(*initialization)
+    elif not all(map(np.isnan, initialization)):
+        rospy.logerr(
+            "Initial pose estimate ({}, {}, {}) is partially specified. You must provide x, y and theta components.".format(
+                *initialization
+            )
+        )
+    pf.spin()

@@ -1,0 +1,145 @@
+#!/usr/bin/env python
+from __future__ import division
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import rospkg
+import rospy
+import yaml
+
+# from hsluv import hsluv_to_rgb
+from nav_msgs.msg import OccupancyGrid
+from nav_msgs.srv import GetMap
+from sensor_msgs.msg import LaserScan
+from rospy.numpy_msg import numpy_msg
+
+from cse478 import utils
+from localization.sensor_model import LaserScanSensorModelROS
+
+
+def plot_sensor_model(raw_map_msg, laser_msg, sensor_params=None, show_angle=False):
+    """Visualize the sensor model likelihood across the entire map.
+
+    Args:
+        raw_map_msg: Raw ROS message to convert
+        laser_msg: ROS message containing laser scan data
+        sensor_params: Sensor model parameters
+    """
+    map_info = raw_map_msg.info
+
+    # Convert to proper type. Fixes error with reading from bag and ros types
+    map_msg = OccupancyGrid()
+    map_msg.info = map_info
+    map_msg.header = raw_map_msg.header
+    map_msg.data = raw_map_msg.data
+
+    # Create numpy array representing map for later use
+    # with values 0 = not permissible, 1 = permissible
+    # and dimension (map_msg.info.height, map_msg.info.width),
+    array_255 = np.array(map_msg.data).reshape(
+        (map_msg.info.height, map_msg.info.width)
+    )
+    permissible_region = np.zeros_like(array_255, dtype=bool)
+    permissible_region[array_255 == 0] = 1
+
+    # Initialize particles in every permissible coordinate
+    permissible_x, permissible_y = np.where(permissible_region == 1)
+    n_permissible = len(permissible_x)
+    n_angles = 30
+    n_particles = n_permissible * n_angles
+    particles = np.zeros((n_angles, n_permissible, 3))
+    particles[:, :, 0] = permissible_y[:]
+    particles[:, :, 1] = permissible_x[:]
+    angles = np.arange(n_angles) * (2 * np.pi / n_angles)
+    particles[:, :, 2] = np.expand_dims(angles, 1)
+    particles = particles.reshape((-1, 3))
+    utils.map_to_world(particles, map_info)
+    weights = np.full((n_particles), 1.0 / float(n_particles))
+    rospy.loginfo(
+        "Creating {} particles in {} positions".format(n_particles, n_permissible)
+    )
+
+    # Instantiate sensor model
+    sensor_model = LaserScanSensorModelROS(
+        scan_topic="/fake_topic1",
+        laser_ray_step=18,
+        exclude_max_range_rays=True,
+        max_range_meters=11.0,
+        map_msg=map_msg,
+        particles=particles,
+        weights=weights,
+        car_length=0,  # Ensure particles don't get shifted into laser frame
+        sensor_params=sensor_params,
+    )
+
+    rospy.loginfo("Computing sensor model likelihoods...")
+    sensor_model.start()
+    sensor_model.lidar_callback(laser_msg)
+    rospy.loginfo("Done computing likelihoods.")
+
+    # Compute maximum likelihood orientation for each permissible coordinate
+    weights = weights.reshape((n_angles, -1))
+    angles = np.argmax(weights, axis=0) * (2.0 * np.pi / n_angles)
+    weights = np.amax(weights, axis=0)
+    rospy.logdebug("Weights shape", weights.shape)
+
+    # Rescale weights linearly to [0.0, 1.0]
+    w_min = np.amin(weights)
+    w_max = np.amax(weights)
+    rospy.loginfo("w_min = {:f}".format(w_min))
+    rospy.loginfo("w_max = {:f}".format(w_max))
+    weights = (weights - w_min) / (w_max - w_min)
+
+    # Plot sensor likelihoods as image
+    if show_angle:
+        img = np.zeros((map_msg.info.height, map_msg.info.width, 3))
+    else:
+        img = np.zeros((map_msg.info.height, map_msg.info.width))
+    for x, y, weight, angle in zip(permissible_x, permissible_y, weights, angles):
+        if show_angle:
+            # To visualize orientation information, the show_angle option uses
+            # the hsluv Python library. Orientation is encoded as hue, since
+            # this is a circular dimension. Weight is encoded as saturation, so
+            # less confident particles fade to grey. More confident particles
+            # are darker, so the less confident grey is boosted to white.
+            #
+            # If you wish to use this option, run `pip3 install hsluv` and
+            # uncomment the import at the top of this script.
+            img[x, y] = hsluv_to_rgb(
+                (
+                    angle * 360.0 / (2 * np.pi),
+                    (0.8 * weight + 0.2) * 100.0,
+                    90 - 30 * weight,
+                )
+            )
+        else:
+            # Just show weight of most probable particle.
+            # Offset from 0 so map shows through
+            img[x, y] = 0.8 * weight + 0.2
+
+    img = np.flip(img, axis=0)
+    plt.figure(figsize=(map_msg.info.width / 100, map_msg.info.height / 100), dpi=100)
+    plt.title("Sensor model likelihood")
+    plt.xlabel("x (pixels)")
+    plt.ylabel("y (pixels)")
+    plt.imshow(img)
+    plt.colorbar()
+    plt.show()
+
+
+if __name__ == "__main__":
+    rospy.init_node("plot_sensor_model")
+    localization_root = rospkg.RosPack().get_path("localization")
+    with open(os.path.join(localization_root, "config/parameters.yaml"), "r") as f:
+        params = yaml.full_load(f)
+        sensor_params = params.get("sensor_params")
+        rospy.loginfo("Loaded sensor parameters: {}".format(sensor_params))
+
+    rospy.wait_for_service("static_map")
+    raw_map_msg = rospy.ServiceProxy("static_map", GetMap)().map
+    laser_msg = rospy.wait_for_message("/car/scan", numpy_msg(LaserScan))
+    rospy.loginfo("Received map and laser scan message.")
+    rospy.loginfo("Preparing the plot, which may take a while.")
+    show_angle = rospy.get_param("~show_angle", False)
+    plot_sensor_model(raw_map_msg, laser_msg, sensor_params, show_angle=show_angle)
+

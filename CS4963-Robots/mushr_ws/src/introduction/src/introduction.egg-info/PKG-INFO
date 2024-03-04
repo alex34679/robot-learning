@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: introduction
+Version: 1.0.0
+Summary: CSE 478 MuSHR Introduction Project
+Home-page: https://courses.cs.washington.edu/courses/cse478/
+Author: Gilwoo Lee, Kay Ke, Johan Michalove, Matthew Rockett, Matt Schmittle, Nick Walker
+Maintainer: UW CSE Robotics Teaching Staff
+Maintainer-email: mushr@cs.washington.edu
+License: Educational Use Only

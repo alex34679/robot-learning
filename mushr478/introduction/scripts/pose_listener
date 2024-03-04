@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+"""Run the PoseListener node and plot the resulting poses.
+
+This script plots the car's location and distance from the origin over time.
+"""
+
+import matplotlib.pyplot as plt
+import numpy as np
+import rospy
+
+from introduction.listener import PoseListener, norm_numpy
+
+
+if __name__ == "__main__":
+    # In ROS, nodes are uniquely named. If two nodes with the same name are
+    # launched, the previous one is kicked off. The anonymous=True flag means
+    # that rospy will choose a unique name for our 'listener' node so that
+    # multiple listeners can run simultaneously.
+    rospy.init_node("listener", anonymous=True, disable_signals=True)
+
+    buffer_size = rospy.get_param("~buffer_size", 500)
+    assert int(buffer_size) > 100, "Choose a buffer size at least 100."
+    rospy.loginfo("Creating listener with buffer size " + str(buffer_size))
+    listener = PoseListener(int(buffer_size))
+
+    r = rospy.Rate(5)
+    while not rospy.is_shutdown():
+        r.sleep()
+        if listener.done:
+            break
+
+    locations = np.array(listener.storage)
+
+    # Plot the locations
+    plt.figure()
+    plt.plot(locations[:, 0], locations[:, 1])
+    plt.title("Car Location")
+    plt.xlabel("Distance (m)")
+    plt.ylabel("Distance (m)")
+    plt.axis("equal")
+    # By default, the figure will be saved to ~/.ros/locations.png; modify this
+    # line to save it elsewhere.
+    plt.savefig("locations.png")
+    # Uncomment plt.show() to visualize the plot
+    # plt.show()
+
+    # Use norm_numpy to compute the distance from the origin over time. Then,
+    # plot the distance over time as a line chart and save the plot.
+    # BEGIN QUESTION 2.5
+    "*** REPLACE THIS LINE ***"
+    # END QUESTION 2.5

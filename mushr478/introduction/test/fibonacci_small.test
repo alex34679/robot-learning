@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="introduction" type="fibonacci" name="fibonacci">
+    <param name="fibonacci_index" value="11" />
+    <param name="output_topic" value="/fibonacci_output" />
+  </node>
+  <test test-name="test_fibonacci_small" pkg="introduction" type="fibonacci_small.py"/>
+</launch>

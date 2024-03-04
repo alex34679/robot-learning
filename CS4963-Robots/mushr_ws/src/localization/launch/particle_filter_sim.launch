@@ -1,0 +1,21 @@
+<launch>
+    <arg name="car_name" default="car"/>
+    <arg name="use_namespace" default="true" />
+    <arg name="publish_tf" default="false" />
+    <arg name="initial_x" default="NaN"/>
+    <arg name="initial_y" default="NaN"/>
+    <arg name="initial_theta" default="NaN"/>
+    <arg name="tf_prefix" default="" />
+
+    <group ns="$(arg car_name)" if="$(arg use_namespace )">
+    <include file="$(find localization)/launch/include/particle_filter.xml">
+        <arg name="publish_tf" value="$(arg publish_tf)" />
+        <arg name="tf_prefix" value="$(arg tf_prefix)" />
+    </include>
+    </group>
+    <include file="$(find localization)/launch/include/particle_filter.xml" unless="$(arg use_namespace)">
+        <arg name="publish_tf" value="$(arg publish_tf)" />
+        <arg name="tf_prefix" value="$(arg tf_prefix)" />
+    </include>
+</launch>
+

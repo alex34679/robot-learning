@@ -1,0 +1,125 @@
+#!/usr/bin/env python
+
+import argparse
+import rospy
+
+from geometry_msgs.msg import PoseStamped
+from mushr_sim.srv import CarPose
+from nav_msgs.msg import Path
+from std_msgs.msg import Header
+
+from cse478 import utils
+from control.path_generator import line, wave, circle, left_turn, right_turn, saw
+from control.srv import FollowPath
+
+path_generators = {
+    "line": line,
+    "circle": circle,
+    "left-turn": left_turn,
+    "right-turn": right_turn,
+    "wave": wave,
+    "saw": saw,
+}
+
+if __name__ == "__main__":
+    # anonymous so multiple can run at the same time
+    rospy.init_node("path_sender", [], anonymous=True)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "path_name", type=str, choices=path_generators, help="Name of path to generate"
+    )
+    parser.add_argument(
+        "--tf_prefix", type=str, default="", help="TF Prefix"
+    )
+    parser.add_argument(
+        "--speed", type=float, default=2, help="Max speed along the path"
+    )
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        default=False,
+        help="Whether to reset the car position before starting",
+    )
+
+    parser.add_argument(
+        "--length",
+        type=float,
+        required=False,
+        help="Length of line",
+    )
+
+    parser.add_argument(
+        "--waypoint-sep",
+        type=float,
+        required=False,
+        help="Distance between states",
+    )
+
+    parser.add_argument(
+        "--radius",
+        type=float,
+        required=False,
+        help="Radius of circle to generate",
+    )
+
+    parser.add_argument(
+        "--turn-radius",
+        type=float,
+        required=False,
+        help="Radius of turn",
+    )
+
+    parser.add_argument(
+        "--amplitude",
+        type=float,
+        required=False,
+        help="Size of signal",
+    )
+
+    parser.add_argument(
+        "--n",
+        type=int,
+        required=False,
+        help="Number of cycles",
+    )
+
+    # roslaunch passes additional arguments to <node> executables, so we'll
+    # gracefully discard those
+    args = parser.parse_args(rospy.myargv()[1:])
+
+    # Determine the args to pass through
+    extra_args = vars(args).copy()
+    del extra_args["speed"]
+    del extra_args["reset"]
+    del extra_args["path_name"]
+    del extra_args["tf_prefix"]
+    extra_args = {key: value for key, value in extra_args.items() if value is not None}
+    start_config = (0, 0, 0)
+    waypoints = path_generators[args.path_name](**extra_args)
+
+    if args.reset:
+        # reset car pose
+        rospy.ServiceProxy("/mushr_sim/reposition", CarPose)("car", *start_config)
+        # HACK(nickswalker5-12-21): Sim doesn't wait for reposition to propagate
+        # before returning from service
+        rospy.sleep(1)
+
+    h = Header()
+    # Our generated paths start at (0, 0, 0), so let's make the frame correspond
+    # to the current base_footprint, aka the frame where the current position is
+    # (0, 0, 0)
+    h.frame_id = args.tf_prefix + "base_footprint"
+    h.stamp = rospy.Time.now()
+    desired_speed = args.speed
+
+    as_poses = map(
+        lambda pose: PoseStamped(header=h, pose=utils.particle_to_pose(pose)), waypoints
+    )
+    path = Path(header=h, poses=list(as_poses))
+    print("Sending path and waiting for execution to finish")
+    controller = rospy.ServiceProxy("/car/controller/follow_path", FollowPath)
+
+    # This call will block until the controller stops
+    result = controller.call(path, desired_speed)
+    print(result)

@@ -1,0 +1,8 @@
+version: "3.5"
+services:
+  mushrdev:
+    platform: linux/amd64
+    image: mushr/mushr:Darwin
+    container_name: mushrdev
+    volumes:
+      - ../catkin_ws:/catkin_ws
