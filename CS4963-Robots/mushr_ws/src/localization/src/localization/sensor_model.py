@@ -7,33 +7,31 @@ import rospy
 from sensor_msgs.msg import LaserScan
 from rospy.numpy_msg import numpy_msg
 
-
 class SingleBeamSensorModel:
-    """The single laser beam sensor model."""
+    """单激光束传感器模型。"""
 
     def __init__(self, **kwargs):
-        """Initialize the single-beam sensor model.
+        """初始化单光束传感器模型。
 
-        Args:
-            **kwargs (object): any number of optional keyword arguments:
-                hit_std (float): Noise value for hit reading
-                z_hit (float): Weight for hit reading
-                z_short (float): Weight for short reading
-                z_max (float): Weight for max reading
-                z_rand (float): Weight for random reading
+        参数:
+            **kwargs (object): 可选关键字参数数量可以是任意多个：
+                hit_std (float): 击中读数的噪声值
+                z_hit (float): 击中读数的权重
+                z_short (float): 短距离读数的权重
+                z_max (float): 最大距离读数的权重
+                z_rand (float): 随机读数的权重
         """
         defaults = {
-            "hit_std": 1.0,
-            "z_hit": 0.5,
-            "z_short": 0.05,
-            "z_max": 0.05,
-            "z_rand": 0.5,
+            "hit_std": 1.0,  # 默认击中读数的标准差
+            "z_hit": 0.5,    # 默认击中读数的权重
+            "z_short": 0.05, # 默认短距离读数的权重
+            "z_max": 0.05,   # 默认最大距离读数的权重
+            "z_rand": 0.5,   # 默认随机读数的权重
         }
         if not set(kwargs).issubset(set(defaults)):
             raise ValueError("Invalid keyword argument provided")
-        # These next two lines set the instance attributes from the defaults and
-        # kwargs dictionaries. For example, the key "hit_std" becomes the
-        # instance attribute self.hit_std.
+        # 下面这两行代码从defaults和kwargs字典设置实例属性。
+        # 例如，键"hit_std"变成了实例属性self.hit_std。
         self.__dict__.update(defaults)
         self.__dict__.update(kwargs)
 
@@ -44,37 +42,35 @@ class SingleBeamSensorModel:
             and self.z_hit == 0
         ):
             raise ValueError(
-                "The model is undefined for the given parameters."
-                "You must provide a non-0 value for at least one portion of the model."
+                "给定参数未定义模型。"
+                "你必须至少为模型的一部分提供一个非0值。"
             )
 
     def precompute_sensor_model(self, max_r):
-        """Precompute sensor model probabilities for all pairs of simulated and observed
-        distance measurements.
+        """预计算所有模拟和观测距离测量对的传感器模型可能性。
 
-        The probabilities are stored in a 2D array, where the element at index
-        (r, d) is the probability of observing measurement r when the simulated
-        (expected) measurement is d.
+        概率存储在一个2D数组中，其中索引(r, d)处的元素是在模拟（期望）测量为d时，
+        观察到的测量结果r的概率。
 
-        You will need to normalize the table to ensure probabilities sum to 1, i.e.
-        sum P(r | d) over all r should be 1, for all d.
+        您需要对表格进行归一化以确保概率之和为1，即
+        对于所有的d，所有r的P(r | d)之和应该为1。
 
-        Args:
-            max_r (int): The maximum range (in pixels)
+        参数:
+            max_r (int): 最大范围（以像素为单位）
 
-        Returns:
-            prob_table: np.array of shape (max_r+1, max_r+1) containing
-                the sensor probabilities P(r | d), or P(z_t^k | z_t^k*) from lecture.
+        返回:
+            prob_table: 形状为(max_r+1, max_r+1)的np.array，
+                包含传感器概率P(r | d)，或者从讲座中的P(z_t^k | z_t^k*)。
         """
         table_width = int(max_r) + 1
         prob_table = np.zeros((table_width, table_width))
 
-        # Get matrices of the same shape as prob_table,
-        # where each entry holds the real measurement r (obs_r)
-        # or the simulated (expected) measurement d (sim_r).
+        # 获取与prob_table形状相同的矩阵，
+        # 其中每个条目都持有真实测量r（obs_r）
+        # 或模拟（期望）测量d（sim_r）。
         obs_r, sim_r = np.mgrid[0:table_width, 0:table_width]
 
-        # Use obs_r and sim_r to vectorize the sensor model precomputation.
+        # 使用obs_r和sim_r来矢量化传感器模型的预计算。
         diff = sim_r - obs_r
         # BEGIN SOLUTION "QUESTION 2.1"
         if self.hit_std > 0:
@@ -90,10 +86,12 @@ class SingleBeamSensorModel:
         prob_table[obs_r == max_r] += self.z_max
         prob_table[obs_r < max_r] += np.true_divide(self.z_rand, max_r)
 
+        # 对概率表格进行归一化，确保每个d的概率之和为1。
         prob_table /= prob_table.sum(axis=0, keepdims=True)
         # END SOLUTION
 
         return prob_table
+
 
 
 class LaserScanSensorModelROS:
@@ -257,16 +255,18 @@ class LaserScanSensorModelROS:
 
 
     def downsample(self, ranges):
-        """Downsample the laser rays.
+        """
+        对激光束进行降采样。
 
-        Args:
-            ranges: all observed distance measurements
+        参数:
+            ranges: 所有观测到的距离测量值
 
-        Returns:
-            ranges: downsampled observed distance measurements
-            angles: downsampled observed laser beam angles
+        返回:
+            ranges: 降采样后的观测到的距离测量值
+            angles: 降采样后的观测到的激光束角度
         """
         if not self.exclude_max_range_rays:
+            # 如果不排除最大范围内的激光束，则对激光角度进行降采样，并将NaN值替换为最大范围值。
             angles = np.copy(self.laser_angles[0 :: self.laser_ray_step]).astype(
                 np.float32
             )
@@ -275,8 +275,7 @@ class LaserScanSensorModelROS:
             sampled[np.abs(sampled) < 1e-3] = self.max_range_meters
             return sampled, angles
 
-        # We're trying to avoid copying the ranges here, so
-        # we silence errors from comparison to NaN instead of overriding these values
+        # 如果我们试图避免复制ranges数组，因此在比较NaN时消除错误而不是覆盖这些值
         with np.errstate(invalid="ignore"):
             valid_indices = np.logical_and(
                 ~np.isnan(ranges), ranges > 0.01, ranges < self.max_range_meters
@@ -284,17 +283,18 @@ class LaserScanSensorModelROS:
         filtered_ranges = ranges[valid_indices]
         filtered_angles = self.laser_angles[valid_indices]
 
-        # Grab expected number of rays
+        # 计算预期的光线数量
         ray_count = int(self.laser_angles.shape[0] / self.laser_ray_step)
         num_valid = filtered_angles.shape[0]
         sample_indices = np.arange(0, num_valid, float(num_valid) / ray_count).astype(
             np.int64
         )
         # BEGIN SOLUTION NO PROMPT
-        # self.downsampled_angles = np.zeros(ray_count + 1, dtype=np.float32) # TODO Why plus 1?
-        # self.downsampled_ranges = np.zeros(ray_count + 1, dtype=np.float32) # If this works, remove these lines
+        # self.downsampled_angles = np.zeros(ray_count + 1, dtype=np.float32) # TODO 为什么加1？
+        # self.downsampled_ranges = np.zeros(ray_count + 1, dtype=np.float32) # 如果这个方法有效，删除这些行
         # self.downsampled_angles[:sample_indices.shape[0]] = np.copy(...)
         # END SOLUTION
+        # 对过滤后的角度和范围进行降采样
         angles = np.copy(filtered_angles[sample_indices]).astype(np.float32)
         ranges = np.copy(filtered_ranges[sample_indices]).astype(np.float32)
         return ranges, angles

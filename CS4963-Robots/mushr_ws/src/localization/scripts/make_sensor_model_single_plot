@@ -21,12 +21,14 @@ def plot_sensor_model_for_obs(
         max_r (float): The maximum range (in meters)
         sim_r (float): The simulated range observation (in meters)
     """
+    # 计算最大范围和模拟观测距离对应的像素值。
     max_r_pixels = int(max_r / resolution)
     obs_r_pixels = int(sim_r / resolution)
-
+    # 创建一个单光束传感器模型实例，并预先计算传感器模型，然后获取与模拟观测距离相对应的可能性值。
     sensor_model = SingleBeamSensorModel(**sensor_params)
     prob_table = sensor_model.precompute_sensor_model(max_r_pixels)
     likelihood = prob_table[:, obs_r_pixels]
+    # 计算每个可能性值对应的距离，并记录所有可能性值的总和。
     distance = resolution * np.arange(likelihood.size, dtype=float)
     rospy.loginfo("Sum of probabilities: {:.3f}".format(likelihood.sum()))
 
